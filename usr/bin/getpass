@@ -1,0 +1,397 @@
+#!/bin/bash
+
+# getpass by tytuskedzierski
+
+##
+## setst and tests
+##
+
+
+clear
+getpassVersion="1.2.14"
+
+#bcvPath=`cat ~/blackcat/bcv.conf`
+case $1 in
+"set-key")
+read -p "Enter GPG key recipient: " uigpgkey
+
+if test  -z "$uigpgkey"
+then
+  echo "error: empty gpg key"
+  exit 0
+fi
+echo "$uigpgkey" > ~/.bcv/bcvKey
+;;
+"error")
+ echo "$2 $3"
+;;
+##
+## help message
+##
+"help")
+echo -e "${BIYellow}COMMAND       ARGS                 INFO${ColorReset}"
+echo "add                              - adds record"
+echo "add-a         HOST USER PHRASE   - adds record"
+echo "add-comment   TOKEN COMMENT      - adds comment to record"
+echo "add-c         TOKEN COMMENT      - adds comment to record"
+echo "add-file      TOKEN PATHTOFILE   - adds file to record"
+echo "add-f         TOKEN PATHTOFILE   - adds file to record"
+echo "get           TOKEN              - gets full record"
+echo "get-qr        TOKEN              - gets qr code "
+echo "qr            TOKEN              - gets qr code "
+echo "remove        TOKEN              - removes record"
+echo "rm            TOKEN              - removes record"
+echo "search-host   PHRASE             - search in hosts"
+echo "sh            PHRASE             - search in hosts"
+echo "search-user   PHRASE             - search in users"
+echo "su            PHRASE             - search in users"
+echo "list                             - gets all records"
+echo "ls                               - gets all records"
+echo "create-bcv                       - sets bcv ( blackcat vault) folder location"
+#echo "set-tomb                         - sets bcv in tomb encrypted fs"
+echo "help                             - shows this help"
+echo "version                          - shows version"
+echo "v                                - shows version"
+;;
+esac
+key_gpg=`cat ~/.bcv/bcvKey`
+
+
+# 1,gpg_key checkcout
+if test  -z "$1"
+then
+  echo "try: getpass help"
+  exit 0
+fi
+
+if test  -z "$key_gpg"
+then
+  echo "try: getpass set-key"
+  exit 0
+fi
+
+# Bold High Intensity
+BIBlack='\033[1;90m'      # Black
+BIRed='\033[1;91m'        # Red
+BIGreen='\033[1;92m'      # Green
+BIYellow='\033[1;93m'     # Yellow
+BIBlue='\033[1;94m'       # Blue
+BIPurple='\033[1;95m'     # Purple
+BICyan='\033[1;96m'       # Cyan
+BIWhite='\033[1;97m'      # White
+
+# High Intensity backgrounds
+On_IBlack='\033[0;100m'   # Black
+On_IRed='\033[0;101m'     # Red
+On_IGreen='\033[0;102m'   # Green                                               On_IYellow='\033[0;103m'  # Yellow
+On_IBlue='\033[0;104m'    # Blue                                                On_IPurple='\033[0;105m'  # Purple
+On_ICyan='\033[0;106m'    # Cyan
+On_IWhite='\033[0;107m'   # White
+
+ColorReset='\033[0m' # No Color
+
+echo -e "(bc)getpass $1 $2 $3 $4"
+#echo "----------------------"
+
+##
+## shortcuts
+##
+
+case $1 in
+"version")
+clear
+echo "$getpassVersion"
+;;
+"v")
+clear
+echo "$getpassVersion"
+;;
+"-v")
+clear
+echo "$getpassVersion"
+;;
+"rm")
+getpass remove $2 
+;;
+"ls")
+getpass list
+;;
+"sh")
+getpass search-host $2
+;;
+"su")
+getpass search-user $2
+;;
+"add-c")
+getpass add-comment $2 $3
+;;
+"add-f")
+getpass add-file $2 $3
+;;
+"qr")
+getpass get-qr $2
+;;
+##
+## settings manual
+##
+
+# create bcv structure
+"create-bcv")
+
+  mkdir -p ~/.bcv/host
+  mkdir -p ~/.bcv/user
+  mkdir -p ~/.bcv/phrase
+  mkdir -p ~/.bcv/comment
+  mkdir -p ~/.bcv/files
+tree ~/.bcv/
+;;
+# tomb path
+"set-tomb")
+echo "Tomb is not supported in termux "
+;;
+##
+## error - basic handler
+##
+esac 
+
+##
+## Remove record
+##
+case $1 in
+"remove")
+if test  -z "$2"
+then
+  getpass error "syntax error: " "getpass remove TOKEN"
+  exit 0
+fi
+
+if [ -f ~/.bcv/phrase/$2.gpg ]; then
+  echo "clearing data: $2"
+else
+ getpass error "error: " "no record $2"
+  exit 0
+fi
+  rm ~/.bcv/user/$2
+  rm ~/.bcv/host/$2
+  rm ~/.bcv/phrase/$2.gpg
+  rm ~/.bcv/comment/$2
+  rm -r ~/.bcv/files/$2
+;;
+##
+## add record
+##
+"add")
+read -p "Enter host name: " uihost
+read -p "Enter user name: " uiuser
+read -p "Enter password: " uipass
+newrec=`pwgen -A -s 7 1`
+echo "$uihost" > ~/.bcv/host/$newrec
+echo "$uiuser" > ~/.bcv/user/$newrec
+echo "$uipass" > ~/.bcv/phrase/$newrec
+#~/blackcat-termux/blackcat lock-file ~/.bcv/phrase/$newrec
+gpg -q --yes --encrypt --recipient $key_gpg --trust-model always ~/.bcv/phrase/$newrec
+rm ~/.bcv/phrase/$newrec
+echo "saved as $newrec"
+;;
+##
+## add record with args
+##
+"add-a")
+if test  -z "$2" 
+then
+  getpass error "syntax error: " "getpass add-a HOST USER PHRASE"
+  exit 0
+fi
+
+if test  -z "$3"
+then
+  getpass error "syntax error: " "getpass add-a HOST USER PHRASE"
+  exit 0
+fi
+
+if test  -z "$4"
+then
+  getpass error "syntax error: " "getpass add-a HOST USER PHRASE"
+  exit 0
+fi
+
+newrec=`pwgen -A -s 7 1`
+
+
+echo "$2" > ~/.bcv/host/$newrec
+echo "$3" > ~/.bcv/user/$newrec
+echo "$4" > ~/.bcv/phrase/$newrec
+#~/blackcat-termux/blackcat lock-file ~/.bcv/phrase/$newrec
+gpg -q --yes --encrypt --recipient $key_gpg --trust-model always ~/.bcv/phrase/$newrec
+rm ~/.bcv/phrase/$newrec
+echo "saved as $newrec"
+;;
+##
+## add comment to record
+##
+"add-comment")
+if test  -z "$2"
+then
+  getpass error "syntax error: " "getpass add-comment TOKEN COMMENT"
+  exit 0
+fi
+
+if test  -z "$3"
+then
+  getpass error "syntax error: " "getpass add-comment TOKEN COMMENT"
+  exit 0
+fi
+echo "$3" > ~/.bcv/comment/$2
+echo "comment added to $2"
+;;
+##
+## add file to record
+##
+"add-file")
+if test  -z "$2"
+then
+  getpass error "syntax error: " "getpass add-file TOKEN PATHTOFILE"
+  exit 0
+fi
+
+if test  -z "$3"
+then
+  getpass error "syntax error: " "getpass add-file TOKEN PATHTOFILE"
+  exit 0
+fi
+mkdir -p ~/.bcv/files/$2
+cp $3 ~/.bcv/files/$2/
+;;
+##
+## get record details
+##
+"get")
+if test  -z "$2"
+then
+  getpass error "syntax error: " "getpass get TOKEN"
+  exit 0
+fi
+
+if [ -f ~/.bcv/phrase/$2.gpg ]; then
+ echo "record found: $2"  
+ echo " "
+else
+getpass error "error: " "no record $2"
+  exit 0
+fi
+
+
+ searchhost=`cat ~/.bcv/host/$2`
+ searchuser=`cat ~/.bcv/user/$2`
+#~/blackcat-termux/blackcat unlock-file ~/.bcv/phrase/$2.gpg
+gpg -q --yes --decrypt --output ~/.bcv/phrase/$2 ~/.bcv/phrase/$2.gpg
+ searchpass=`cat ~/.bcv/phrase/$2`
+ rm ~/.bcv/phrase/$2
+#~/blackcat-termux/blackcat lock-file ~/.bcv/phrase/$2
+#gpg -q --yes --encrypt --recipient $key_gpg --trust-model always  ~/.bcv/phrase/$2
+ searchcomment=`cat ~/.bcv/comment/$2`
+
+ 
+echo -e "TOKEN:  ${BIBlue} $2${ColorReset}"
+echo "HOST:    $searchhost"
+echo "USER:    $searchuser"
+echo -e "PHRASE:  ${BIGreen}$searchpass${ColorReset}"
+echo -e "COMMENT: ${BIYellow}$searchcomment${ColorReset}"
+
+contentCheck=`ls ~/.bcv/files/`
+
+if test  -z "$contentCheck"
+then
+  echo "no files added"
+  exit 0
+else
+  echo "FILES:"
+  tree -T "files added to $2"  ~/.bcv/files/$2/
+fi
+
+;;
+##
+## get records phrase in qr code
+##
+"get-qr")
+if test  -z "$2"
+then
+  getpass error "syntax error: " "getpass get TOKEN"
+  exit 0
+fi
+
+if [ -f ~/.bcv/phrase/$2.gpg ]; then
+  echo "record found: $2"
+else
+  getpass error "error: " "no record $2"
+  exit 0
+fi
+
+
+ searchhost=`cat ~/.bcv/host/$2`
+ searchuser=`cat ~/.bcv/user/$2`
+#~/blackcat-termux/blackcat unlock-file ~/.bcv/phrase/$2.gpg
+gpg -q --yes --decrypt --output ~/.bcv/phrase/$2 ~/.bcv/phrase/$2.gpg
+ searchpass=`cat ~/.bcv/phrase/$2`
+ rm ~/.bcv/phrase/$2
+#~/blackcat-termux/blackcat lock-file ~/.bcv/phrase/$2
+# echo $token $searchhost $searchuser $searchpass
+ qrencode -t ANSI $searchpass
+;;
+##
+## search record by host
+##
+"search-host")
+for record in ~/.bcv/host/*
+do
+searchin=`cat $record`
+if [[ $searchin =~ "$2" ]]; then
+ token=`basename $record`
+ searchhost=`cat ~/.bcv/host/$token`
+ searchuser=`cat ~/.bcv/user/$token`
+ searchpass=`cat ~/.bcv/phrase/$token`
+ echo -e "$token ${BIGreen} $searchhost ${ColorReset} $searchuser"
+fi
+done
+;;
+##
+## search record by user
+##
+"search-user")
+for record in ~/.bcv/user/*
+do
+searchin=`cat $record`
+if [[ $searchin =~ "$2" ]]; then
+ token=`basename $record`
+ searchhost=`cat ~/.bcv/host/$token`
+ searchuser=`cat ~/.bcv/user/$token`
+ searchpass=`cat ~/.bcv/phrase/$token`
+ echo -e "$token $searchhost ${BIGreen} $searchuser ${ColorReset}"
+fi
+done
+;;
+##
+## list records
+##
+"list")
+contentCheck=`ls ~/.bcv/host`
+
+if test  -z "$contentCheck"
+then
+  getpass error "error: " "no records in bcv"
+  exit 0
+fi
+
+for record in ~/.bcv/host/*
+do
+ token=`basename $record`
+ searchhost=`cat ~/.bcv/host/$token`
+ searchuser=`cat ~/.bcv/user/$token`
+ #searchpass=`cat ~/.bcv/phrase/$token`
+ #echo $token $searchhost $searchuser  #$searchpass
+ echo -e "${BIGreen}$token ${ColorReset} $searchhost $searchuser"
+done
+;;
+esac
+
+exit 0

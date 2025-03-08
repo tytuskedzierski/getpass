@@ -1,0 +1,6 @@
+Package: getpass
+Version: 1.2.14-1
+Architecture: all
+Maintainer: tytuskedzierski
+Depends: 
+Description: password manager with gpg encryption, written in shell
