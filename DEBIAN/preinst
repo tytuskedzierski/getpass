@@ -1,1 +1,4 @@
 #!/bin/bash
+sudo apt install gnupg 
+sudo apt install qrencode
+sudo apt install rsync

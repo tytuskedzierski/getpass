@@ -2,15 +2,35 @@
 
 # getpass by tytuskedzierski
 
+clear
+getpassVersion="1.2.17"
+
 ##
 ## setst and tests
 ##
+# Bold High Intensity
+BIBlack='\033[1;90m'      # Black
+BIRed='\033[1;91m'        # Red
+BIGreen='\033[1;92m'      # Green
+BIYellow='\033[1;93m'     # Yellow
+BIBlue='\033[1;94m'       # Blue
+BIPurple='\033[1;95m'     # Purple
+BICyan='\033[1;96m'       # Cyan
+BIWhite='\033[1;97m'      # White
+
+# High Intensity backgrounds
+On_IBlack='\033[0;100m'   # Black
+On_IRed='\033[0;101m'     # Red
+On_IGreen='\033[0;102m'   # Green                                               
+On_IYellow='\033[0;103m'  # Yellow
+On_IBlue='\033[0;104m'    # Blue                                                
+On_IPurple='\033[0;105m'  # Purple
+On_ICyan='\033[0;106m'    # Cyan
+On_IWhite='\033[0;107m'   # White
+
+ColorReset='\033[0m' # No Color
 
 
-clear
-getpassVersion="1.2.14"
-
-#bcvPath=`cat ~/blackcat/bcv.conf`
 case $1 in
 "set-key")
 read -p "Enter GPG key recipient: " uigpgkey
@@ -30,6 +50,13 @@ echo "$uigpgkey" > ~/.bcv/bcvKey
 ##
 "help")
 echo -e "${BIYellow}COMMAND       ARGS                 INFO${ColorReset}"
+echo "bcv-create                       - creates bcv ( blackcat vault) folder location"
+echo "bcv-send     HOST USER PORT      - sends bcv with rsync via ssh"
+#echo "set-tomb                         - sets bcv in tomb encrypted fs"
+echo "help                             - shows this help"
+echo "version                          - shows version"
+echo "v                                - shows version"
+echo " " 
 echo "add                              - adds record"
 echo "add-a         HOST USER PHRASE   - adds record"
 echo "add-comment   TOKEN COMMENT      - adds comment to record"
@@ -47,17 +74,14 @@ echo "search-user   PHRASE             - search in users"
 echo "su            PHRASE             - search in users"
 echo "list                             - gets all records"
 echo "ls                               - gets all records"
-echo "create-bcv                       - sets bcv ( blackcat vault) folder location"
-#echo "set-tomb                         - sets bcv in tomb encrypted fs"
-echo "help                             - shows this help"
-echo "version                          - shows version"
-echo "v                                - shows version"
+
 ;;
 esac
 key_gpg=`cat ~/.bcv/bcvKey`
 
-
-# 1,gpg_key checkcout
+#
+# gpg_key checkcout
+#
 if test  -z "$1"
 then
   echo "try: getpass help"
@@ -70,25 +94,7 @@ then
   exit 0
 fi
 
-# Bold High Intensity
-BIBlack='\033[1;90m'      # Black
-BIRed='\033[1;91m'        # Red
-BIGreen='\033[1;92m'      # Green
-BIYellow='\033[1;93m'     # Yellow
-BIBlue='\033[1;94m'       # Blue
-BIPurple='\033[1;95m'     # Purple
-BICyan='\033[1;96m'       # Cyan
-BIWhite='\033[1;97m'      # White
 
-# High Intensity backgrounds
-On_IBlack='\033[0;100m'   # Black
-On_IRed='\033[0;101m'     # Red
-On_IGreen='\033[0;102m'   # Green                                               On_IYellow='\033[0;103m'  # Yellow
-On_IBlue='\033[0;104m'    # Blue                                                On_IPurple='\033[0;105m'  # Purple
-On_ICyan='\033[0;106m'    # Cyan
-On_IWhite='\033[0;107m'   # White
-
-ColorReset='\033[0m' # No Color
 
 echo -e "(bc)getpass $1 $2 $3 $4"
 #echo "----------------------"
@@ -136,8 +142,7 @@ getpass get-qr $2
 ##
 
 # create bcv structure
-"create-bcv")
-
+"bcv-create")
   mkdir -p ~/.bcv/host
   mkdir -p ~/.bcv/user
   mkdir -p ~/.bcv/phrase
@@ -147,7 +152,7 @@ tree ~/.bcv/
 ;;
 # tomb path
 "set-tomb")
-echo "Tomb is not supported in termux "
+getpass error "error: " "Tomb is not supported in Termux"
 ;;
 ##
 ## error - basic handler
@@ -155,9 +160,32 @@ echo "Tomb is not supported in termux "
 esac 
 
 ##
-## Remove record
+## bcv send
 ##
 case $1 in
+"bcv-send")
+if test  -z "$2"
+then
+  getpass error "syntax error: " "getpass bcv-send HOST USER PORT"
+  exit 0
+fi
+
+if test  -z "$3"
+then
+  getpass error "syntax error: " "getpass bcv-send HOST USER PORT"
+  exit 0
+fi
+
+if test  -z "$4"
+then
+  getpass error "syntax error: " "getpass bcv-send HOST USER PORT"
+  exit 0
+fi
+rsync -avz -e "ssh -p$4" ~/.bcv/* $3@$2:.bcv/ 
+;;
+##
+## remove record
+##
 "remove")
 if test  -z "$2"
 then
@@ -188,8 +216,8 @@ newrec=`pwgen -A -s 7 1`
 echo "$uihost" > ~/.bcv/host/$newrec
 echo "$uiuser" > ~/.bcv/user/$newrec
 echo "$uipass" > ~/.bcv/phrase/$newrec
-#~/blackcat-termux/blackcat lock-file ~/.bcv/phrase/$newrec
-gpg -q --yes --encrypt --recipient $key_gpg --trust-model always ~/.bcv/phrase/$newrec
+#gpg -q --yes --encrypt --recipient $key_gpg --trust-model always ~/.bcv/phrase/$newrec
+gpg -e -r $key_gpg ~/.bcv/phrase/$newrec
 rm ~/.bcv/phrase/$newrec
 echo "saved as $newrec"
 ;;
@@ -221,8 +249,9 @@ newrec=`pwgen -A -s 7 1`
 echo "$2" > ~/.bcv/host/$newrec
 echo "$3" > ~/.bcv/user/$newrec
 echo "$4" > ~/.bcv/phrase/$newrec
-#~/blackcat-termux/blackcat lock-file ~/.bcv/phrase/$newrec
-gpg -q --yes --encrypt --recipient $key_gpg --trust-model always ~/.bcv/phrase/$newrec
+#gpg -q --yes --encrypt --recipient $key_gpg --trust-model always ~/.bcv/phrase/$newrec
+gpg -e -r $key_gpg ~/.bcv/phrase/$newrec
+
 rm ~/.bcv/phrase/$newrec
 echo "saved as $newrec"
 ;;
@@ -283,12 +312,9 @@ fi
 
  searchhost=`cat ~/.bcv/host/$2`
  searchuser=`cat ~/.bcv/user/$2`
-#~/blackcat-termux/blackcat unlock-file ~/.bcv/phrase/$2.gpg
 gpg -q --yes --decrypt --output ~/.bcv/phrase/$2 ~/.bcv/phrase/$2.gpg
  searchpass=`cat ~/.bcv/phrase/$2`
  rm ~/.bcv/phrase/$2
-#~/blackcat-termux/blackcat lock-file ~/.bcv/phrase/$2
-#gpg -q --yes --encrypt --recipient $key_gpg --trust-model always  ~/.bcv/phrase/$2
  searchcomment=`cat ~/.bcv/comment/$2`
 
  
@@ -330,12 +356,9 @@ fi
 
  searchhost=`cat ~/.bcv/host/$2`
  searchuser=`cat ~/.bcv/user/$2`
-#~/blackcat-termux/blackcat unlock-file ~/.bcv/phrase/$2.gpg
 gpg -q --yes --decrypt --output ~/.bcv/phrase/$2 ~/.bcv/phrase/$2.gpg
  searchpass=`cat ~/.bcv/phrase/$2`
  rm ~/.bcv/phrase/$2
-#~/blackcat-termux/blackcat lock-file ~/.bcv/phrase/$2
-# echo $token $searchhost $searchuser $searchpass
  qrencode -t ANSI $searchpass
 ;;
 ##

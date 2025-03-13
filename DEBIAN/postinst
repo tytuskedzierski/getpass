@@ -1,1 +1,5 @@
 #!/bin/bash
+getpass bcv-create
+read -p "Enter gpg key:" uikey
+echo "$uikey" > ~/.bcv/bcvKey
+echo "internal" > ~/.bcv/bcvKeyType

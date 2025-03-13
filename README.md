@@ -1,4 +1,4 @@
-# getpass 1.2.14
+# getpass 1.2.17
 ## password manager with gnupg encryption for debian based linux distributions
 <hr>
 
@@ -10,22 +10,23 @@ sudo apt install qrencode
 
 ### Download
 ```
-curl https://debian.initiatio.pl/getpass_1.2.14_all.deb -O getpass_1.2.14_all.deb
+curl https://debian.initiatio.pl/getpass_1.2.17_all.deb -O getpass_1.2.17_all.deb
 ```
 ### Installation
 ```
-dpkg -i ./getpass_1.2.14_all.deb
+dpkg -i ./getpass_1.2.17_all.deb
 or
-sudo apt install getpass_1.2.14_all.deb
+sudo apt install getpass_1.2.17_all.deb
 
-rm ./getpass_1.2.14_all.deb
+rm ./getpass_1.2.17_all.deb
 
 getpass create-bcv
 getpass set-key user@domain.com
 ```
 ### Commands List
 ```
-create-bcv                       - sets bcv ( blackcat vault) folder location
+bcv-create                       - sets bcv ( blackcat vault) folder location
+bcv-send      HOST USER PORT     - sends bcv with rsync via ssh
 set-key                          - sets gpg key
 help                             - shows this help
 version                          - shows version
@@ -58,9 +59,10 @@ ls                               - gets all records
    - [ ] importing and droping key
  - [ ] External .bcv path
    - [ ] Tomb support
- - [ ] Install script
-   - [ ] Preinstall script
-   - [ ] Postinstall script
+
+### 1.2.14
+ - [X] Preinstall script
+ - [X] Postinstall script
 
 ### 1.2.14 Standalone Release
 - [x] Moved from blackcat-termux to standalone deb package.
@@ -71,4 +73,4 @@ ls                               - gets all records
 
 
 ## Download
-[getpass_1.2.14_all.deb]( https://debian.initiatio.pl/getpass_1.2.14_all.deb)
+[getpass_1.2.17_all.deb]( https://debian.initiatio.pl/getpass_1.2.17_all.deb)
